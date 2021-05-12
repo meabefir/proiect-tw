@@ -53,8 +53,9 @@ function getUsers(){
 // dom building functions
 
 function clearElement(el){
-    while (el.firstChild)
-        el.removeChild(el.firstChild);
+    el.innerHTML = ``;
+    // while (el.firstChild)
+    //     el.removeChild(el.firstChild);
 }
 
 function buildCards(cards, shouldSort = false){
@@ -124,10 +125,14 @@ function buildCards(cards, shouldSort = false){
 
         // ability to delete cards
         new_delete_button.addEventListener("click", (e) => {
-            createConfirmationMenu(`Are you sure you want to remove the task "${app.cards.find(c => e.currentTarget.getAttribute("id") == c.id).title}"?`, () =>{
+            var id = e.currentTarget.getAttribute("id");
+
+            // createConfirmationMenu(`Are you sure you want to remove the task "${app.cards.find(c => e.currentTarget.getAttribute("id") == c.id).title}"?`, () =>{
+            createConfirmationMenu(`Are you sure you want to remove the task "${app.cards.find(c => id == c.id).title}"?`, () =>{
                 var data = {
                     user: app.currentUser,
-                    taskId: e.currentTarget.getAttribute("id")
+                    taskId: id
+                    // taskId: e.currentTarget.getAttribute("id")
                 }
                 //console.log("deleting "+e.currentTarget.getAttribute("id"));
                 fetch(`${baseUrl}delete_task`,
@@ -169,6 +174,12 @@ function buildCards(cards, shouldSort = false){
     var aside = document.createElement("aside");
     container.appendChild(aside);
     
+    var user_h = document.createElement("h2");
+    aside.appendChild(user_h);
+    user_h.innerText = app.currentUser;
+    user_h.style.marginBottom = "10px";
+    user_h.style.fontSize = "40px";
+
     var change_user_button = document.createElement("button");
     aside.appendChild(change_user_button);
     change_user_button.innerText = "Change user";
@@ -270,14 +281,18 @@ function buildUserSelection(users){
         new_li.appendChild(new_remove_button);
         new_remove_button.innerHTML = `<i class="fas fa-trash"></i>`;
         new_remove_button.className = "button-user-remove";
+        new_remove_button.setAttribute("user", user);
 
         new_remove_button.addEventListener("click", (e) => {
+            var id = e.currentTarget.previousSibling.innerText;
           //  fetch(`${baseUrl}delete_user/${e.currentTarget.previousSibling.innerText}`, {method: "delete"})
-            createConfirmationMenu(`Are you sure you want to delete user ${e.currentTarget.previousSibling.innerText}?`, () => {
-                fetch(baseUrl+"delete_user/"+e.currentTarget.previousSibling.innerText, {method: "delete"})
+            createConfirmationMenu(`Are you sure you want to delete user ${id}?`, () => {
+                //fetch(baseUrl+"delete_user/"+e.target.previousSibling.innerText, {method: "delete"})
+                console.log("deleting ", id);
+                fetch(baseUrl+"delete_user/"+id, {method: "delete"})
                     .then(res => res.json())
                     .then(data => {
-                        //console.log(data);
+                        console.log(data);
                         buildUserSelection(data);
                     })
             })
@@ -411,6 +426,11 @@ function createCreationMenu(data){
             createError("You need a title for the task!");
             return;
         }
+        if (titleInput.value.length > 50)
+        {
+            createError("Title is too long! Enter at most 40 characters!");
+            return;
+        }
         if (descriptionInput.value.trim() == "")
         {
             createError("You need a description for the task!");
@@ -510,7 +530,7 @@ function createConfirmationMenu(str, callback){
     new_div.className = "confirmation-container temp-container";
     new_div.id = "confirmation-container";
     new_div.innerHTML = `
-        <h2>${str}</h2>
+        <h2 class="wrap">${str}</h2>
         <button class="button confirm big" id="button-confirm"> Confirm </button>
         <button class="button cancel big" id="button-cancel"> Cancel </button>
     `
@@ -519,6 +539,7 @@ function createConfirmationMenu(str, callback){
         document.body.removeChild(document.getElementById("confirmation-container"));
         removeCover();
     })
+
     document.getElementById("button-confirm").addEventListener("click", () => {
         callback();
         document.body.removeChild(document.getElementById("confirmation-container"));
